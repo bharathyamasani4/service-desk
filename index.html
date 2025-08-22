@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Helpdesk - AI-Powered Support</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <p id="loading-message">Processing...</p>
+        <button id="skip-loading" class="btn btn--outline" style="margin-top: 16px;">Skip</button>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" class="app">
+        <!-- Login/Register Page -->
+        <div id="auth-page" class="auth-page">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1>Smart Helpdesk</h1>
+                    <p>AI-Powered Support System</p>
+                </div>
+                
+                <!-- Login Form -->
+                <div id="login-form" class="auth-form">
+                    <h2>Sign In</h2>
+                    
+                    <!-- Demo Login Buttons -->
+                    <div class="demo-login-buttons">
+                        <button type="button" id="demo-admin-login" class="btn btn--primary btn--full-width demo-btn">
+                            <i class="fas fa-user-shield"></i> Login as Admin
+                        </button>
+                        <button type="button" id="demo-agent-login" class="btn btn--secondary btn--full-width demo-btn">
+                            <i class="fas fa-headset"></i> Login as Agent
+                        </button>
+                        <button type="button" id="demo-user-login" class="btn btn--outline btn--full-width demo-btn">
+                            <i class="fas fa-user"></i> Login as Customer
+                        </button>
+                    </div>
+                    
+                    <div class="divider">
+                        <span>OR</span>
+                    </div>
+                    
+                    <form id="login-form-element">
+                        <div class="form-group">
+                            <label for="login-email" class="form-label">Email</label>
+                            <input type="email" id="login-email" class="form-control" placeholder="Enter your email" value="admin@helpdesk.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password" class="form-label">Password</label>
+                            <input type="password" id="login-password" class="form-control" placeholder="Enter your password" value="admin123">
+                        </div>
+                        <button type="submit" class="btn btn--primary btn--full-width">Sign In</button>
+                    </form>
+                    <p class="auth-switch">
+                        Don't have an account? <a href="#" id="show-register">Register here</a>
+                    </p>
+                </div>
+
+                <!-- Register Form -->
+                <div id="register-form" class="auth-form hidden">
+                    <h2>Create Account</h2>
+                    <form id="register-form-element">
+                        <div class="form-group">
+                            <label for="register-name" class="form-label">Full Name</label>
+                            <input type="text" id="register-name" class="form-control" placeholder="Enter your full name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="register-email" class="form-label">Email</label>
+                            <input type="email" id="register-email" class="form-control" placeholder="Enter your email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="register-password" class="form-label">Password</label>
+                            <input type="password" id="register-password" class="form-control" placeholder="Create a password" required>
+                        </div>
+                        <button type="submit" class="btn btn--primary btn--full-width">Create Account</button>
+                    </form>
+                    <p class="auth-switch">
+                        Already have an account? <a href="#" id="show-login">Sign in here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Application -->
+        <div id="main-app" class="main-app hidden">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1 class="header-title">Smart Helpdesk</h1>
+                    <nav class="header-nav">
+                        <a href="#" class="nav-link active" data-page="dashboard">Dashboard</a>
+                        <a href="#" class="nav-link" data-page="tickets">Tickets</a>
+                        <a href="#" class="nav-link admin-only" data-page="knowledge-base">Knowledge Base</a>
+                        <a href="#" class="nav-link agent-only" data-page="agent-dashboard">Agent Dashboard</a>
+                        <a href="#" class="nav-link admin-only" data-page="settings">Settings</a>
+                    </nav>
+                </div>
+                <div class="header-right">
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-count" id="notification-count">0</span>
+                    </div>
+                    <div class="user-menu">
+                        <span id="user-name">User</span>
+                        <span id="user-role" class="user-role">user</span>
+                        <button id="logout-btn" class="btn btn--outline btn--sm">Logout</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Dashboard Page -->
+                <div id="dashboard-page" class="page active">
+                    <div class="page-header">
+                        <h2>Dashboard</h2>
+                        <p>Welcome to your Smart Helpdesk dashboard</p>
+                    </div>
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-ticket-alt"></i></div>
+                            <div class="stat-content">
+                                <h3 id="total-tickets">0</h3>
+                                <p>Total Tickets</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                            <div class="stat-content">
+                                <h3 id="pending-tickets">0</h3>
+                                <p>Pending Tickets</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="stat-content">
+                                <h3 id="resolved-tickets">0</h3>
+                                <p>Resolved Tickets</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fas fa-robot"></i></div>
+                            <div class="stat-content">
+                                <h3 id="ai-resolution-rate">0%</h3>
+                                <p>AI Resolution Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-charts">
+                        <div class="chart-container">
+                            <h3>Ticket Categories</h3>
+                            <div style="position: relative; height: 300px;">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="recent-activity">
+                            <h3>Recent Activity</h3>
+                            <div id="recent-activity-list" class="activity-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tickets Page -->
+                <div id="tickets-page" class="page">
+                    <div class="page-header">
+                        <h2>Support Tickets</h2>
+                        <div class="page-actions">
+                            <button id="create-ticket-btn" class="btn btn--primary">
+                                <i class="fas fa-plus"></i> Create Ticket
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="tickets-filters">
+                        <div class="filter-group">
+                            <label class="form-label">Status</label>
+                            <select id="status-filter" class="form-control">
+                                <option value="">All Statuses</option>
+                                <option value="open">Open</option>
+                                <option value="triaged">Triaged</option>
+                                <option value="waiting_human">Waiting Human</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="form-label">Category</label>
+                            <select id="category-filter" class="form-control">
+                                <option value="">All Categories</option>
+                                <option value="billing">Billing</option>
+                                <option value="tech">Technical</option>
+                                <option value="shipping">Shipping</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label class="form-label">Search</label>
+                            <input type="text" id="search-tickets" class="form-control" placeholder="Search tickets...">
+                        </div>
+                    </div>
+
+                    <div id="tickets-list" class="tickets-list"></div>
+                </div>
+
+                <!-- Create Ticket Modal -->
+                <div id="create-ticket-modal" class="modal hidden">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Create Support Ticket</h3>
+                            <button class="modal-close" id="close-create-ticket">&times;</button>
+                        </div>
+                        <form id="create-ticket-form">
+                            <div class="form-group">
+                                <label for="ticket-title" class="form-label">Title</label>
+                                <input type="text" id="ticket-title" class="form-control" placeholder="Brief description of the issue" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="ticket-description" class="form-label">Description</label>
+                                <textarea id="ticket-description" class="form-control" rows="4" placeholder="Detailed description of your issue" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="ticket-category" class="form-label">Category</label>
+                                <select id="ticket-category" class="form-control">
+                                    <option value="other">Other</option>
+                                    <option value="billing">Billing</option>
+                                    <option value="tech">Technical</option>
+                                    <option value="shipping">Shipping</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn--outline" id="cancel-create-ticket">Cancel</button>
+                                <button type="submit" class="btn btn--primary">Create Ticket</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Ticket Detail Modal -->
+                <div id="ticket-detail-modal" class="modal hidden">
+                    <div class="modal-content large">
+                        <div class="modal-header">
+                            <h3 id="ticket-detail-title">Ticket Details</h3>
+                            <button class="modal-close" id="close-ticket-detail">&times;</button>
+                        </div>
+                        <div class="ticket-detail-content">
+                            <div class="ticket-info">
+                                <div class="ticket-meta">
+                                    <span class="status-badge" id="ticket-detail-status">open</span>
+                                    <span class="category-badge" id="ticket-detail-category">other</span>
+                                    <span class="ticket-id" id="ticket-detail-id">#123</span>
+                                </div>
+                                <div class="ticket-description" id="ticket-detail-description"></div>
+                            </div>
+                            
+                            <div class="ticket-tabs">
+                                <button class="tab-btn active" data-tab="conversation">Conversation</button>
+                                <button class="tab-btn" data-tab="suggestions">AI Suggestions</button>
+                                <button class="tab-btn" data-tab="audit">Audit Log</button>
+                            </div>
+                            
+                            <div id="conversation-tab" class="tab-content active">
+                                <div id="ticket-conversation" class="conversation"></div>
+                                <div class="agent-only reply-section">
+                                    <form id="reply-form">
+                                        <div class="form-group">
+                                            <label class="form-label">Reply to Customer</label>
+                                            <textarea id="reply-message" class="form-control" rows="4" placeholder="Type your reply..."></textarea>
+                                        </div>
+                                        <div class="form-actions">
+                                            <select id="reply-status" class="form-control">
+                                                <option value="">Keep current status</option>
+                                                <option value="resolved">Resolve Ticket</option>
+                                                <option value="closed">Close Ticket</option>
+                                                <option value="waiting_human">Need More Info</option>
+                                            </select>
+                                            <button type="submit" class="btn btn--primary">Send Reply</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <div id="suggestions-tab" class="tab-content">
+                                <div id="ai-suggestions" class="ai-suggestions"></div>
+                            </div>
+                            
+                            <div id="audit-tab" class="tab-content">
+                                <div id="audit-log" class="audit-log"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Knowledge Base Page -->
+                <div id="knowledge-base-page" class="page admin-only">
+                    <div class="page-header">
+                        <h2>Knowledge Base</h2>
+                        <div class="page-actions">
+                            <button id="create-article-btn" class="btn btn--primary">
+                                <i class="fas fa-plus"></i> Create Article
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="kb-search">
+                        <input type="text" id="search-kb" class="form-control" placeholder="Search articles...">
+                    </div>
+                    
+                    <div id="kb-articles-list" class="kb-articles"></div>
+                </div>
+
+                <!-- Create/Edit Article Modal -->
+                <div id="article-modal" class="modal hidden">
+                    <div class="modal-content large">
+                        <div class="modal-header">
+                            <h3 id="article-modal-title">Create Article</h3>
+                            <button class="modal-close" id="close-article-modal">&times;</button>
+                        </div>
+                        <form id="article-form">
+                            <div class="form-group">
+                                <label for="article-title" class="form-label">Title</label>
+                                <input type="text" id="article-title" class="form-control" placeholder="Article title" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="article-body" class="form-label">Content</label>
+                                <textarea id="article-body" class="form-control" rows="10" placeholder="Article content..." required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="article-tags" class="form-label">Tags (comma-separated)</label>
+                                <input type="text" id="article-tags" class="form-control" placeholder="billing, payments, help">
+                            </div>
+                            <div class="form-group">
+                                <label for="article-status" class="form-label">Status</label>
+                                <select id="article-status" class="form-control">
+                                    <option value="draft">Draft</option>
+                                    <option value="published">Published</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn--outline" id="cancel-article">Cancel</button>
+                                <button type="submit" class="btn btn--primary">Save Article</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Agent Dashboard -->
+                <div id="agent-dashboard-page" class="page agent-only">
+                    <div class="page-header">
+                        <h2>Agent Dashboard</h2>
+                        <p>Review AI suggestions and manage tickets</p>
+                    </div>
+                    
+                    <div class="agent-stats">
+                        <div class="stat-card">
+                            <h3 id="pending-suggestions">0</h3>
+                            <p>Pending Suggestions</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="assigned-tickets">0</h3>
+                            <p>Assigned Tickets</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="resolved-today">0</h3>
+                            <p>Resolved Today</p>
+                        </div>
+                    </div>
+                    
+                    <div class="suggestions-queue">
+                        <h3>AI Suggestions Queue</h3>
+                        <div id="suggestions-queue-list" class="suggestions-list"></div>
+                    </div>
+                </div>
+
+                <!-- Settings Page -->
+                <div id="settings-page" class="page admin-only">
+                    <div class="page-header">
+                        <h2>System Settings</h2>
+                        <p>Configure AI agent behavior and system parameters</p>
+                    </div>
+                    
+                    <div class="settings-sections">
+                        <div class="settings-card">
+                            <h3>AI Agent Configuration</h3>
+                            <form id="settings-form">
+                                <div class="form-group">
+                                    <div class="checkbox-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" id="auto-close-enabled">
+                                            <span class="checkmark"></span>
+                                            Enable Auto-Close
+                                        </label>
+                                        <p class="form-help">Automatically close tickets when confidence is high</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="confidence-threshold" class="form-label">
+                                        Confidence Threshold: <span id="threshold-value">0.78</span>
+                                    </label>
+                                    <input type="range" id="confidence-threshold" class="range-slider" 
+                                           min="0" max="1" step="0.01" value="0.78">
+                                    <div class="range-labels">
+                                        <span>Low (0.0)</span>
+                                        <span>High (1.0)</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="sla-hours" class="form-label">SLA Hours</label>
+                                    <input type="number" id="sla-hours" class="form-control" min="1" max="168" value="24">
+                                    <p class="form-help">Hours before a ticket is marked as SLA breach</p>
+                                </div>
+                                
+                                <button type="submit" class="btn btn--primary">Save Settings</button>
+                            </form>
+                        </div>
+                        
+                        <div class="settings-card">
+                            <h3>System Status</h3>
+                            <div class="system-status">
+                                <div class="status-item">
+                                    <span class="status-label">AI Agent</span>
+                                    <span class="status--success">Online</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Database</span>
+                                    <span class="status--success">Connected</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Queue System</span>
+                                    <span class="status--success">Running</span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="status-label">Notifications</span>
+                                    <span class="status--success">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

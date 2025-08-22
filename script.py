@@ -1,0 +1,903 @@
+# Create comprehensive project structure files for the Smart Helpdesk application
+import json
+
+# Create package.json for the backend
+backend_package_json = {
+    "name": "smart-helpdesk-backend",
+    "version": "1.0.0",
+    "description": "Smart Helpdesk with Agentic Triage - Backend API",
+    "main": "server.js",
+    "type": "module",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "nodemon server.js",
+        "test": "jest",
+        "seed": "node scripts/seed.js",
+        "build": "echo 'No build step required for backend'",
+        "lint": "eslint . --ext .js",
+        "format": "prettier --write ."
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "mongoose": "^7.6.3",
+        "jsonwebtoken": "^9.0.2",
+        "bcryptjs": "^2.4.3",
+        "cors": "^2.8.5",
+        "helmet": "^7.1.0",
+        "express-rate-limit": "^7.1.5",
+        "morgan": "^1.10.0",
+        "socket.io": "^4.7.4",
+        "joi": "^17.11.0",
+        "dotenv": "^16.3.1",
+        "uuid": "^9.0.1",
+        "node-cron": "^3.0.3",
+        "nodemailer": "^6.9.7",
+        "multer": "^1.4.5",
+        "express-validator": "^7.0.1",
+        "compression": "^1.7.4"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.1",
+        "jest": "^29.7.0",
+        "supertest": "^6.3.3",
+        "eslint": "^8.53.0",
+        "prettier": "^3.0.3",
+        "@jest/globals": "^29.7.0"
+    },
+    "keywords": ["helpdesk", "ai", "agentic", "support", "triage"],
+    "author": "Smart Helpdesk Team",
+    "license": "MIT"
+}
+
+# Create package.json for the frontend
+frontend_package_json = {
+    "name": "smart-helpdesk-frontend",
+    "version": "1.0.0",
+    "description": "Smart Helpdesk with Agentic Triage - Frontend",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "coverage": "vitest --coverage",
+        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "lint:fix": "eslint . --ext ts,tsx --fix"
+    },
+    "dependencies": {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-router-dom": "^6.18.0",
+        "react-hook-form": "^7.47.0",
+        "react-query": "^3.39.3",
+        "axios": "^1.6.0",
+        "socket.io-client": "^4.7.4",
+        "zustand": "^4.4.6",
+        "react-hot-toast": "^2.4.1",
+        "lucide-react": "^0.292.0",
+        "clsx": "^2.0.0",
+        "tailwind-merge": "^2.0.0",
+        "@headlessui/react": "^1.7.17",
+        "date-fns": "^2.30.0",
+        "recharts": "^2.8.0"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.37",
+        "@types/react-dom": "^18.2.15",
+        "@typescript-eslint/eslint-plugin": "^6.10.0",
+        "@typescript-eslint/parser": "^6.10.0",
+        "@vitejs/plugin-react": "^4.1.0",
+        "typescript": "^5.2.2",
+        "vite": "^4.5.0",
+        "vitest": "^0.34.6",
+        "@testing-library/react": "^13.4.0",
+        "@testing-library/jest-dom": "^6.1.4",
+        "@testing-library/user-event": "^14.5.1",
+        "jsdom": "^23.0.1",
+        "autoprefixer": "^10.4.16",
+        "postcss": "^8.4.31",
+        "tailwindcss": "^3.3.5",
+        "eslint": "^8.53.0",
+        "eslint-plugin-react-hooks": "^4.6.0",
+        "eslint-plugin-react-refresh": "^0.4.4"
+    }
+}
+
+# Create Docker Compose file
+docker_compose = """version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: helpdesk-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: helpdesk
+    volumes:
+      - mongodb_data:/data/db
+      - ./database/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - helpdesk-network
+
+  # Redis for session management and caching
+  redis:
+    image: redis:7-alpine
+    container_name: helpdesk-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis123
+    volumes:
+      - redis_data:/data
+    networks:
+      - helpdesk-network
+
+  # Backend API Server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: helpdesk-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGO_URI: mongodb://admin:password123@mongodb:27017/helpdesk?authSource=admin
+      REDIS_URL: redis://:redis123@redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_REFRESH_SECRET: your-refresh-secret-key
+      AUTO_CLOSE_ENABLED: true
+      CONFIDENCE_THRESHOLD: 0.78
+      SLA_HOURS: 24
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      STUB_MODE: true
+      EMAIL_HOST: smtp.gmail.com
+      EMAIL_PORT: 587
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASS: ${EMAIL_PASS:-}
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - helpdesk-network
+    command: ["npm", "run", "dev"]
+
+  # Frontend React Application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: helpdesk-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://backend:5000
+      VITE_SOCKET_URL: http://localhost:5000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - helpdesk-network
+    command: ["npm", "run", "dev", "--", "--host"]
+
+  # Nginx Reverse Proxy (Optional for production)
+  nginx:
+    image: nginx:alpine
+    container_name: helpdesk-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - helpdesk-network
+
+networks:
+  helpdesk-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+"""
+
+# Create backend Dockerfile
+backend_dockerfile = """# Multi-stage build for backend
+FROM node:18-alpine AS base
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy source code
+COPY . .
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S helpdeskapi -u 1001
+
+# Change ownership of the app directory
+RUN chown -R helpdeskapi:nodejs /app
+USER helpdeskapi
+
+# Expose port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
+  CMD curl -f http://localhost:5000/api/health || exit 1
+
+# Start application
+CMD ["npm", "start"]
+
+# Development stage
+FROM base AS development
+USER root
+RUN npm install
+USER helpdeskapi
+CMD ["npm", "run", "dev"]
+"""
+
+# Create frontend Dockerfile
+frontend_dockerfile = """# Multi-stage build for frontend
+FROM node:18-alpine AS base
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci && npm cache clean --force
+
+# Copy source code
+COPY . .
+
+# Build stage
+FROM base AS build
+RUN npm run build
+
+# Production stage
+FROM nginx:alpine AS production
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+# Development stage
+FROM base AS development
+EXPOSE 3000
+CMD ["npm", "run", "dev", "--", "--host"]
+"""
+
+# Create environment example file
+env_example = """# Environment Configuration
+NODE_ENV=development
+PORT=5000
+
+# Database
+MONGO_URI=mongodb://admin:password123@localhost:27017/helpdesk?authSource=admin
+REDIS_URL=redis://:redis123@localhost:6379
+
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_REFRESH_SECRET=your-refresh-secret-key
+JWT_EXPIRES_IN=1h
+JWT_REFRESH_EXPIRES_IN=7d
+
+# AI Configuration
+OPENAI_API_KEY=sk-your-openai-api-key
+STUB_MODE=true
+AUTO_CLOSE_ENABLED=true
+CONFIDENCE_THRESHOLD=0.78
+SLA_HOURS=24
+
+# Email Configuration
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=100
+RATE_LIMIT_AUTH_MAX=5
+
+# CORS
+CORS_ORIGIN=http://localhost:3000
+
+# File Upload
+MAX_FILE_SIZE=5242880
+UPLOAD_PATH=./uploads
+
+# Logging
+LOG_LEVEL=info
+LOG_FILE=./logs/app.log
+"""
+
+# Create seed script
+seed_script = """#!/usr/bin/env node
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Import models (you would import your actual models here)
+const UserSchema = new mongoose.Schema({
+  _id: String,
+  email: String,
+  password: String,
+  name: String,
+  role: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const TicketSchema = new mongoose.Schema({
+  _id: String,
+  title: String,
+  description: String,
+  category: String,
+  status: String,
+  createdBy: String,
+  assignee: String,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+const ArticleSchema = new mongoose.Schema({
+  _id: String,
+  title: String,
+  body: String,
+  tags: [String],
+  status: String,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+const User = mongoose.model('User', UserSchema);
+const Ticket = mongoose.model('Ticket', TicketSchema);
+const Article = mongoose.model('Article', ArticleSchema);
+
+async function seedDatabase() {
+  try {
+    // Connect to MongoDB
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('Connected to MongoDB');
+
+    // Clear existing data
+    await User.deleteMany({});
+    await Ticket.deleteMany({});
+    await Article.deleteMany({});
+    console.log('Cleared existing data');
+
+    // Create users
+    const users = [
+      {
+        _id: '1',
+        email: 'admin@helpdesk.com',
+        password: await bcrypt.hash('admin123', 12),
+        name: 'Admin User',
+        role: 'admin'
+      },
+      {
+        _id: '2',
+        email: 'agent@helpdesk.com',
+        password: await bcrypt.hash('agent123', 12),
+        name: 'Support Agent',
+        role: 'agent'
+      },
+      {
+        _id: '3',
+        email: 'user@helpdesk.com',
+        password: await bcrypt.hash('user123', 12),
+        name: 'John Customer',
+        role: 'user'
+      }
+    ];
+
+    await User.insertMany(users);
+    console.log('Created users');
+
+    // Create KB articles
+    const articles = [
+      {
+        _id: '1',
+        title: 'How to update payment method',
+        body: 'To update your payment method: 1. Go to Account Settings 2. Click Payment Methods 3. Add or edit payment details',
+        tags: ['billing', 'payments'],
+        status: 'published'
+      },
+      {
+        _id: '2',
+        title: 'Troubleshooting 500 errors',
+        body: '500 errors indicate server issues. Try: 1. Clear browser cache 2. Use incognito mode 3. Contact support',
+        tags: ['tech', 'errors'],
+        status: 'published'
+      },
+      {
+        _id: '3',
+        title: 'Tracking your shipment',
+        body: 'Track your shipment using: 1. Order confirmation email 2. Account dashboard 3. Tracking number lookup',
+        tags: ['shipping', 'delivery'],
+        status: 'published'
+      }
+    ];
+
+    await Article.insertMany(articles);
+    console.log('Created KB articles');
+
+    // Create sample tickets
+    const tickets = [
+      {
+        _id: '1',
+        title: 'Refund for double charge',
+        description: 'I was charged twice for order #1234. Please help!',
+        category: 'billing',
+        status: 'open',
+        createdBy: '3'
+      },
+      {
+        _id: '2',
+        title: 'App crashes on login',
+        description: 'The mobile app crashes every time I try to log in',
+        category: 'tech',
+        status: 'waiting_human',
+        createdBy: '3',
+        assignee: '2'
+      }
+    ];
+
+    await Ticket.insertMany(tickets);
+    console.log('Created sample tickets');
+
+    console.log('Database seeded successfully!');
+    process.exit(0);
+  } catch (error) {
+    console.error('Seeding failed:', error);
+    process.exit(1);
+  }
+}
+
+seedDatabase();
+"""
+
+# Create README.md
+readme_content = """# Smart Helpdesk with Agentic Triage
+
+A modern helpdesk system with AI-powered ticket triage that automatically classifies, retrieves relevant knowledge base articles, and drafts responses for customer support tickets.
+
+## 🚀 Features
+
+### Core Functionality
+- **Multi-role Authentication**: Admin, Agent, and User roles with JWT-based authentication
+- **Ticket Management**: Complete lifecycle from creation to resolution
+- **AI-Powered Triage**: Automatic classification, KB retrieval, and response drafting
+- **Knowledge Base**: Searchable articles with tagging and full-text search
+- **Real-time Updates**: Live notifications via WebSocket connections
+- **Audit Logging**: Complete trail of all ticket actions with trace IDs
+
+### Agentic Workflow
+- **Planning**: Multi-step task decomposition
+- **Classification**: Smart categorization (billing/tech/shipping/other)
+- **KB Retrieval**: Semantic search with confidence scoring
+- **Response Drafting**: AI-generated responses with article citations
+- **Decision Making**: Confidence-based auto-resolution or human assignment
+
+### Technical Features
+- **Security**: Rate limiting, CORS, Helmet, input validation
+- **Performance**: Caching, optimistic updates, lazy loading
+- **Monitoring**: Health checks, structured logging, metrics
+- **Testing**: Unit tests, integration tests, E2E tests
+- **DevOps**: Docker containerization, CI/CD ready
+
+## 🏗 Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   React Frontend │────│  Express API    │────│   MongoDB       │
+│   (TypeScript)   │    │   (Node.js)     │    │   Database      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                        │                        │
+         │              ┌─────────────────┐                │
+         └──────────────│  Socket.io      │────────────────┘
+                        │  (Real-time)    │
+                        └─────────────────┘
+                                 │
+                      ┌─────────────────┐
+                      │  AI Agent       │
+                      │  Workflow       │
+                      └─────────────────┘
+```
+
+## 🛠 Tech Stack
+
+### Frontend
+- **React 18** with TypeScript
+- **Vite** for build tooling
+- **Tailwind CSS** for styling
+- **React Router** for navigation
+- **Zustand** for state management
+- **Socket.io Client** for real-time features
+- **React Hook Form** for form management
+- **Vitest** for testing
+
+### Backend
+- **Node.js** with Express
+- **MongoDB** with Mongoose ODM
+- **Socket.io** for WebSocket connections
+- **JWT** for authentication
+- **Redis** for session management
+- **OpenAI API** for AI capabilities
+- **Jest** for testing
+
+### DevOps
+- **Docker** and Docker Compose
+- **Nginx** for reverse proxy
+- **GitHub Actions** for CI/CD
+- **ESLint** and Prettier for code quality
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+
+- Docker and Docker Compose
+- Git
+
+### Option 1: Docker Compose (Recommended)
+
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd smart-helpdesk
+```
+
+2. **Set up environment variables**
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+3. **Start the application**
+```bash
+docker-compose up --build
+```
+
+4. **Access the application**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
+- MongoDB: localhost:27017
+
+### Option 2: Local Development
+
+1. **Install dependencies**
+```bash
+# Backend
+cd backend
+npm install
+
+# Frontend
+cd ../frontend
+npm install
+```
+
+2. **Start MongoDB** (using Docker)
+```bash
+docker run -d -p 27017:27017 --name helpdesk-mongo \\
+  -e MONGO_INITDB_ROOT_USERNAME=admin \\
+  -e MONGO_INITDB_ROOT_PASSWORD=password123 \\
+  mongo:7.0
+```
+
+3. **Seed the database**
+```bash
+cd backend
+npm run seed
+```
+
+4. **Start the applications**
+```bash
+# Backend (Terminal 1)
+cd backend
+npm run dev
+
+# Frontend (Terminal 2)
+cd frontend
+npm run dev
+```
+
+## 🔐 Default Credentials
+
+| Role  | Email               | Password  |
+|-------|-------------------|-----------|
+| Admin | admin@helpdesk.com | admin123  |
+| Agent | agent@helpdesk.com | agent123  |
+| User  | user@helpdesk.com  | user123   |
+
+## 📖 API Documentation
+
+### Authentication
+```bash
+# Register
+POST /api/auth/register
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123"
+}
+
+# Login
+POST /api/auth/login
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+### Tickets
+```bash
+# Create ticket
+POST /api/tickets
+Authorization: Bearer <token>
+{
+  "title": "Payment issue",
+  "description": "Cannot process payment",
+  "category": "billing"
+}
+
+# Get tickets
+GET /api/tickets?status=open&category=tech
+Authorization: Bearer <token>
+
+# Get ticket details
+GET /api/tickets/:id
+Authorization: Bearer <token>
+```
+
+### Knowledge Base
+```bash
+# Search articles
+GET /api/kb?query=payment&tags=billing
+Authorization: Bearer <token>
+
+# Create article (Admin only)
+POST /api/kb
+Authorization: Bearer <token>
+{
+  "title": "How to reset password",
+  "body": "Step-by-step instructions...",
+  "tags": ["account", "security"],
+  "status": "published"
+}
+```
+
+## 🧪 Testing
+
+### Backend Tests
+```bash
+cd backend
+npm test                 # Run all tests
+npm run test:unit       # Unit tests only
+npm run test:integration # Integration tests
+npm run test:coverage   # Coverage report
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm test                # Run tests in watch mode
+npm run test:ui         # Visual test runner
+npm run coverage        # Coverage report
+```
+
+### E2E Tests
+```bash
+npm run test:e2e        # Cypress E2E tests
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MONGO_URI` | MongoDB connection string | Required |
+| `JWT_SECRET` | JWT signing secret | Required |
+| `OPENAI_API_KEY` | OpenAI API key (optional) | - |
+| `STUB_MODE` | Use AI stub instead of real API | `true` |
+| `AUTO_CLOSE_ENABLED` | Enable auto-closing tickets | `true` |
+| `CONFIDENCE_THRESHOLD` | Min confidence for auto-close | `0.78` |
+
+### AI Configuration
+
+The system supports both real OpenAI API and deterministic stub mode:
+
+**Stub Mode** (Default)
+- Keyword-based classification
+- Template responses
+- Configurable confidence scores
+- No API keys required
+
+**OpenAI Mode**
+- GPT-4 powered classification
+- Contextual responses
+- Dynamic confidence scoring
+- Requires OPENAI_API_KEY
+
+## 🤖 Agentic Workflow Details
+
+### 1. Planning Phase
+- Receives new ticket
+- Decomposes into: classify → retrieve → draft → decide
+- Creates trace ID for audit logging
+
+### 2. Classification
+- **Stub Mode**: Keyword matching
+  - billing: "refund", "payment", "charge"
+  - tech: "error", "bug", "crash"
+  - shipping: "delivery", "package"
+- **AI Mode**: GPT-4 classification with context
+
+### 3. Knowledge Base Retrieval
+- **Stub Mode**: TF-IDF similarity scoring
+- **AI Mode**: Semantic similarity with embeddings
+- Returns top 3 articles with confidence scores
+
+### 4. Response Drafting
+- **Stub Mode**: Template-based responses
+- **AI Mode**: Contextual GPT-4 responses
+- Includes citations to relevant KB articles
+
+### 5. Decision Making
+- Calculates confidence score (0.0-1.0)
+- If `confidence >= threshold` AND `autoCloseEnabled`: auto-resolve
+- Otherwise: assign to human agent
+
+## 📊 Monitoring
+
+### Health Endpoints
+- `GET /api/health` - Application health
+- `GET /api/health/db` - Database connectivity
+- `GET /api/health/ai` - AI service status
+
+### Metrics
+- Response times
+- Ticket volume
+- Agent performance
+- AI confidence scores
+- User satisfaction
+
+## 🔒 Security
+
+### Implemented Security Measures
+- **Authentication**: JWT with refresh tokens
+- **Authorization**: Role-based access control
+- **Rate Limiting**: Configurable limits per endpoint
+- **Input Validation**: Joi schema validation
+- **Security Headers**: Helmet.js middleware
+- **CORS**: Configurable cross-origin policies
+- **SQL Injection**: Mongoose query sanitization
+- **XSS Protection**: Input sanitization
+
+### Security Headers
+```javascript
+{
+  "Content-Security-Policy": "default-src 'self'",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "X-XSS-Protection": "1; mode=block"
+}
+```
+
+## 🚀 Deployment
+
+### Production Checklist
+- [ ] Set strong JWT secrets
+- [ ] Configure HTTPS/SSL
+- [ ] Set up MongoDB Atlas
+- [ ] Configure Redis cluster
+- [ ] Set up monitoring (New Relic, DataDog)
+- [ ] Configure log aggregation
+- [ ] Set up backups
+- [ ] Configure CI/CD pipeline
+
+### Docker Production Build
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Kubernetes Deployment
+```bash
+kubectl apply -f k8s/
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+### Development Guidelines
+- Write tests for new features
+- Follow TypeScript best practices
+- Use conventional commits
+- Update documentation
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- OpenAI for GPT API capabilities
+- MongoDB team for excellent database tools
+- React community for amazing ecosystem
+- Socket.io for real-time capabilities
+
+## 📞 Support
+
+For support, email support@smarthelpdesk.com or create an issue on GitHub.
+
+---
+
+Built with ❤️ by the Smart Helpdesk Team
+"""
+
+# Save all files to CSV for easy access
+import csv
+
+files_data = [
+    {"filename": "backend/package.json", "content": json.dumps(backend_package_json, indent=2)},
+    {"filename": "frontend/package.json", "content": json.dumps(frontend_package_json, indent=2)},
+    {"filename": "docker-compose.yml", "content": docker_compose},
+    {"filename": "backend/Dockerfile", "content": backend_dockerfile},
+    {"filename": "frontend/Dockerfile", "content": frontend_dockerfile},
+    {"filename": ".env.example", "content": env_example},
+    {"filename": "backend/scripts/seed.js", "content": seed_script},
+    {"filename": "README.md", "content": readme_content}
+]
+
+# Create CSV file with all project structure files
+with open('smart_helpdesk_project_files.csv', 'w', newline='', encoding='utf-8') as csvfile:
+    fieldnames = ['filename', 'content']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    
+    writer.writeheader()
+    for file_data in files_data:
+        writer.writerow(file_data)
+
+print(f"Created {len(files_data)} project files in smart_helpdesk_project_files.csv")
+print("\nProject files created:")
+for file_data in files_data:
+    print(f"- {file_data['filename']}")
